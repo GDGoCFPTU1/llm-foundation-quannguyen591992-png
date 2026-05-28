@@ -1,0 +1,70 @@
+name: Autograding Tests
+'on':
+- push
+- repository_dispatch
+permissions:
+  checks: write
+  actions: read
+  contents: read
+jobs:
+  run-autograding-tests:
+    runs-on: ubuntu-latest
+    if: github.actor != 'github-classroom[bot]'
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    - name: Call OpenAI
+      id: call-openai
+      uses: classroom-resources/autograding-command-grader@v1
+      with:
+        test-name: Call OpenAI
+        setup-command: pip install -r requirements.txt
+        command: pytest tests/test_template.py -k "TestCallOpenAI" -v
+        timeout: 10
+        max-score: 20
+    - name: Call Gemini
+      id: call-gemini
+      uses: classroom-resources/autograding-command-grader@v1
+      with:
+        test-name: Call Gemini
+        setup-command: ''
+        command: pytest tests/test_template.py -k "TestCallGemini" -v
+        timeout: 10
+        max-score: 20
+    - name: Call Anthropic
+      id: call-anthropic
+      uses: classroom-resources/autograding-command-grader@v1
+      with:
+        test-name: Call Anthropic
+        setup-command: ''
+        command: pytest tests/test_template.py -k "TestCallAnthropic" -v
+        timeout: 10
+        max-score: 20
+    - name: Compare Models
+      id: compare-models
+      uses: classroom-resources/autograding-command-grader@v1
+      with:
+        test-name: Compare Models
+        setup-command: ''
+        command: pytest tests/test_template.py -k "TestCompareModels" -v
+        timeout: 10
+        max-score: 20
+    - name: Streaming Chat
+      id: streaming-chat
+      uses: classroom-resources/autograding-command-grader@v1
+      with:
+        test-name: Streaming Chat
+        setup-command: ''
+        command: pytest tests/test_template.py -k "TestCompareModels" -v
+        timeout: 10
+        max-score: 20
+    - name: Autograding Reporter
+      uses: classroom-resources/autograding-grading-reporter@v1
+      env:
+        CALL-OPENAI_RESULTS: "${{steps.call-openai.outputs.result}}"
+        CALL-GEMINI_RESULTS: "${{steps.call-gemini.outputs.result}}"
+        CALL-ANTHROPIC_RESULTS: "${{steps.call-anthropic.outputs.result}}"
+        COMPARE-MODELS_RESULTS: "${{steps.compare-models.outputs.result}}"
+        STREAMING-CHAT_RESULTS: "${{steps.streaming-chat.outputs.result}}"
+      with:
+        runners: call-openai,call-gemini,call-anthropic,compare-models,streaming-chat
